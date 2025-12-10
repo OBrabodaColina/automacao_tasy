@@ -1,21 +1,17 @@
-Ignorar dependências do Python e Node
-
+# Python / Node dependencies
 node_modules/
 venv/
-pycache/
+__pycache__/
 *.pyc
 
-Ignorar arquivos de build
-
+# Build
 dist/
 build/
 
-Ignorar variáveis de ambiente (SENHAS)
-
+# Env
 .env
 
-Ignorar arquivos do sistema/IDE
-
+# IDE / system
 .vscode/
 .idea/
 .DS_Store

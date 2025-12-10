@@ -1,0 +1,22 @@
+Ignorar dependências do Python e Node
+
+node_modules/
+venv/
+pycache/
+*.pyc
+
+Ignorar arquivos de build
+
+dist/
+build/
+
+Ignorar variáveis de ambiente (SENHAS)
+
+.env
+
+Ignorar arquivos do sistema/IDE
+
+.vscode/
+.idea/
+.DS_Store
+*.log

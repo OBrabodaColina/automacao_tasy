@@ -1,6 +1,6 @@
 from flask import request
 from flask_restful import Resource
-from backend.db.connection import buscar_titulos
+from db.connection import buscar_titulos
 from datetime import datetime, date
 
 def serialize_value(value):
@@ -17,6 +17,9 @@ class Titulos(Resource):
             'nr_titulo': request.args.get('nr_titulo'),
             'pessoa': request.args.get('pessoa'),
             'status': request.args.get('status'),
+            'origem': request.args.get('origem'),
+            'tipo_pessoa': request.args.get('tipo_pessoa'),
+            'tipo_contratacao': request.args.get('tipo_contratacao'),
             'dt_inicio': request.args.get('dt_inicio'),
             'dt_fim': request.args.get('dt_fim')
         }

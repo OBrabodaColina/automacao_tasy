@@ -1,149 +1,188 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { CheckCircle, XCircle, RefreshCw } from 'lucide-react';
-
-const api = axios.create({
-    baseURL: 'http://localhost:5098/api',
-});
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import api from '../services/api';
+import { toast } from 'sonner';
+import { CheckCircle2, XCircle, Loader2, ArrowLeft, AlertTriangle, RefreshCcw } from 'lucide-react';
 
 const AutomacaoStatus = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [statusData, setStatusData] = useState(null);
+    const [error, setError] = useState(false);
+    const [retrying, setRetrying] = useState(false); // Estado para loading do botão reenvio
 
     useEffect(() => {
         let isMounted = true;
+        let intervalId = null;
 
         const fetchData = async () => {
             try {
                 const response = await api.get(`/status-automacao/${id}`);
+
                 if (isMounted) {
                     setStatusData(response.data);
+
+                    if (response.data.status === 'CONCLUIDO') {
+                        if (intervalId) clearInterval(intervalId);
+                    }
                 }
-                return response.data.status === 'CONCLUIDO';
-            } catch (error) {
-                console.warn("Backend offline ou erro de conexão. Usando dados simulados para demonstração.");
-                if (isMounted) {
-                    setStatusData(prev => {
-                        const total = 5;
-                        const current = prev ? Math.min(prev.concluidos + 1, total) : 1;
-                        const isDone = current === total;
-                        
-                        return {
-                            status: isDone ? 'CONCLUIDO' : 'EM_ANDAMENTO',
-                            total: total,
-                            concluidos: current,
-                            resultados: Array.from({ length: current }, (_, i) => ({
-                                nr_titulo: 1000 + i,
-                                status: Math.random() > 0.1 ? 'SUCESSO' : 'FALHA',
-                                detalhe: Math.random() > 0.1 ? 'Processado com sucesso' : 'Erro timeout Selenium'
-                            }))
-                        };
-                    });
+            } catch (err) {
+                console.error("Erro ao buscar status:", err);
+                if(err.response && err.response.status !== 401) {
+                     setError(true);
+                     if (intervalId) clearInterval(intervalId);
                 }
-                return false;
             }
         };
 
-        const interval = setInterval(async () => {
-            const finished = await fetchData();
-            if (finished) {
-                clearInterval(interval);
-            }
-        }, 2000);
-
-        // Chamada inicial
         fetchData();
+        intervalId = setInterval(fetchData, 2000);
 
         return () => {
             isMounted = false;
-            clearInterval(interval);
+            if (intervalId) clearInterval(intervalId);
         };
     }, [id]);
 
+    const handleReenviarFalhas = async () => {
+        setRetrying(true);
+        try {
+            const response = await api.post(`/jobs/${id}/retry`);
+            toast.success("Novo Job de reenvio criado!");
+            // Redireciona para a tela de status do NOVO job
+            navigate(`/status/${response.data.job_id}`);
+        } catch (error) {
+            toast.error(error.response?.data?.error || "Erro ao reenviar falhas.");
+            setRetrying(false);
+        }
+    };
+
+    if (error) return (
+        <div className="flex flex-col items-center justify-center h-96">
+            <XCircle className="h-12 w-12 text-red-500 mb-4" />
+            <p className="text-slate-600 font-medium">Não foi possível carregar o status do Job.</p>
+            <Link to="/" className="mt-4 text-blue-600 hover:underline">Voltar</Link>
+        </div>
+    );
+
     if (!statusData) return (
-        <div className="flex flex-col items-center justify-center h-64 gap-4">
-            <RefreshCw className="animate-spin h-8 w-8 text-blue-600" />
-            <div className="text-lg text-gray-600">Carregando status da execução...</div>
+        <div className="flex flex-col items-center justify-center h-96 animate-pulse">
+            <Loader2 className="animate-spin h-10 w-10 text-blue-600 mb-4" />
+            <p className="text-slate-500 font-medium">Conectando ao worker...</p>
         </div>
     );
 
     const progress = statusData.total > 0 ? (statusData.concluidos / statusData.total) * 100 : 0;
+    const isDone = statusData.status === 'CONCLUIDO';
+
+    // Conta falhas técnicas (ignora regra de negócio 'E-mail não preenchido')
+    const falhasTecnicas = statusData.resultados?.filter(
+        r => r.status === 'FALHA' && !r.detalhe?.includes('E-mail não preenchido')
+    ).length || 0;
 
     return (
-        <div className="max-w-4xl mx-auto mt-10 p-6 bg-white shadow-lg rounded-lg border-t-4 border-blue-600 font-sans">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <RefreshCw className={`w-6 h-6 ${statusData.status !== 'CONCLUIDO' ? 'animate-spin' : ''}`} />
-                    Status da Execução #{id ? id.substr(0, 8) : 'DEMO'}
-                </h2>
-                <span className={`px-3 py-1 rounded-full text-sm font-bold ${
-                    statusData.status === 'CONCLUIDO' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
-                }`}>
-                    {statusData.status}
-                </span>
-            </div>
-            
-            {/* Barra de Progresso */}
-            <div className="mb-8 bg-gray-100 p-4 rounded-lg border border-gray-200">
-                <div className="flex justify-between mb-2 text-sm font-medium text-gray-600">
-                    <span>Processados: {statusData.concluidos} de {statusData.total}</span>
-                    <span>{Math.round(progress)}%</span>
-                </div>
-                <div className="w-full bg-gray-300 rounded-full h-4 overflow-hidden shadow-inner">
-                    <div 
-                        className={`h-4 rounded-full transition-all duration-500 ease-out ${
-                            statusData.status === 'CONCLUIDO' ? 'bg-green-500' : 'bg-blue-600'
-                        }`} 
-                        style={{ width: `${progress}%` }}
-                    ></div>
-                </div>
-            </div>
+        <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            {/* Header Status */}
+            <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-colors">
+                <div className="flex justify-between items-start mb-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            {isDone ? <CheckCircle2 className="text-emerald-500"/> : <Loader2 className="animate-spin text-blue-500"/>}
+                            {isDone ? 'Execução Finalizada' : 'Processando Fila...'}
+                        </h2>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                            Job ID: <span className="font-mono text-xs text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded border border-slate-200 dark:border-slate-600">{id}</span>
+                        </p>
+                    </div>
 
-            {/* Tabela de Resultados */}
-            <div className="overflow-hidden border rounded-lg shadow-sm">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b">
-                        <tr>
-                            <th className="p-3 text-gray-700 font-bold text-sm uppercase tracking-wider">Título</th>
-                            <th className="p-3 text-gray-700 font-bold text-sm uppercase tracking-wider">Status</th>
-                            <th className="p-3 text-gray-700 font-bold text-sm uppercase tracking-wider">Detalhe</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 bg-white">
-                        {statusData.resultados && statusData.resultados.map((res, idx) => (
-                            <tr key={idx} className="hover:bg-blue-50 transition-colors">
-                                <td className="p-3 font-mono text-gray-800 font-medium">{res.nr_titulo}</td>
-                                <td className="p-3">
-                                    {res.status === 'SUCESSO' ? 
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-700 border border-green-200">
-                                            <CheckCircle className="w-3 h-3"/> Sucesso
-                                        </span> : 
-                                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold bg-red-100 text-red-700 border border-red-200">
-                                            <XCircle className="w-3 h-3"/> Falha
-                                        </span>
-                                    }
-                                </td>
-                                <td className="p-3 text-sm text-gray-500">{res.detalhe}</td>
-                            </tr>
-                        ))}
-                        {(!statusData.resultados || statusData.resultados.length === 0) && (
-                            <tr>
-                                <td colSpan="3" className="p-6 text-center text-gray-400 italic">
-                                    Aguardando processamento...
-                                </td>
-                            </tr>
+                    <div className="flex gap-2">
+                        {/* Botão de Reenviar Falhas (Só aparece se acabou e tem falhas reais) */}
+                        {isDone && falhasTecnicas > 0 && (
+                            <button
+                                onClick={handleReenviarFalhas}
+                                disabled={retrying}
+                                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold tracking-wide bg-amber-100 text-amber-700 border border-amber-200 hover:bg-amber-200 transition-colors disabled:opacity-50"
+                            >
+                                {retrying ? <Loader2 className="w-3 h-3 animate-spin"/> : <RefreshCcw className="w-3 h-3"/>}
+                                Reenviar {falhasTecnicas} Falhas
+                            </button>
                         )}
-                    </tbody>
-                </table>
+
+                        <span className={`px-4 py-1.5 rounded-full text-xs font-bold tracking-wide border h-fit ${
+                            isDone ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400' : 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400'
+                        }`}>
+                            {statusData.status}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Barra de Progresso */}
+                <div className="space-y-2">
+                    <div className="flex justify-between text-sm font-medium text-slate-600 dark:text-slate-400">
+                        <span>Progresso: {statusData.concluidos} / {statusData.total}</span>
+                        <span>{Math.round(progress)}%</span>
+                    </div>
+                    <div className="h-3 w-full bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full transition-all duration-700 ease-out rounded-full ${isDone ? 'bg-emerald-500' : 'bg-blue-600'}`}
+                            style={{ width: `${progress}%` }}
+                        />
+                    </div>
+                </div>
             </div>
 
-            <div className="mt-8 flex justify-end">
-                <Link 
-                    to="/" 
-                    className="text-blue-600 hover:text-blue-800 font-semibold hover:underline flex items-center gap-1 transition-colors"
+            {/* Lista de Resultados */}
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden transition-colors">
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex justify-between items-center">
+                    <h3 className="font-semibold text-slate-800 dark:text-white">Log de Execução</h3>
+                    <span className="text-xs text-slate-500 dark:text-slate-400">Mostrando últimos eventos</span>
+                </div>
+                <div className="max-h-[500px] overflow-auto scroll-smooth">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 sticky top-0 shadow-sm">
+                            <tr>
+                                <th className="p-4 font-medium w-32">Título</th>
+                                <th className="p-4 font-medium w-32">Status</th>
+                                <th className="p-4 font-medium">Detalhes</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                            {statusData.resultados?.map((res, idx) => (
+                                <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                    <td className="p-4 font-mono text-slate-600 dark:text-slate-300 font-medium">{res.nr_titulo}</td>
+                                    <td className="p-4">
+                                        {res.status === 'SUCESSO' ?
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
+                                                <CheckCircle2 className="w-3 h-3"/> Sucesso
+                                            </span> :
+                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-100 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800">
+                                                <XCircle className="w-3 h-3"/> Falha
+                                            </span>
+                                        }
+                                    </td>
+                                    <td className="p-4 text-slate-600 dark:text-slate-400">
+                                        {res.detalhe?.includes('E-mail não preenchido') ? (
+                                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                                <AlertTriangle size={14} /> {res.detalhe}
+                                            </span>
+                                        ) : (
+                                            res.detalhe
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div className="flex justify-end pb-8">
+                <Link
+                    to="/"
+                    className="group inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white text-slate-600 dark:text-slate-300 h-10 px-4 py-2 shadow-sm"
                 >
-                    &larr; Voltar para Início
+                    <ArrowLeft className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                    Voltar para Filtros
                 </Link>
             </div>
         </div>

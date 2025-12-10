@@ -1,5 +1,5 @@
 import oracledb
-from backend.config import Config
+from config import Config
 
 def init_oracle_client():
     """
@@ -42,24 +42,45 @@ def buscar_titulos(filtros):
     
     # Query SQL Tasy
     sql = """
-    SELECT
-      SUBSTR(obter_valor_dominio(710, a.ie_situacao), 1, 254) ds_status_titulo,
-      a.nr_titulo,
-      a.vl_titulo,
-      a.vl_saldo_titulo,
-      ROUND(obter_dados_titulo_receber(a.nr_titulo, 'R'), 2) vl_recebido,
-      a.dt_vencimento dt_vencimento,
-      TRUNC(a.dt_liquidacao) dt_liquidacao,
+SELECT
+    SUBSTR(obter_valor_dominio(710, a.ie_situacao), 1, 254)           AS ds_status_titulo,
+    a.nr_titulo,
+    a.vl_titulo,
+    a.vl_saldo_titulo,
+    ROUND(obter_dados_titulo_receber(a.nr_titulo, 'R'), 2)            AS vl_recebido,
+    a.dt_vencimento                                                   AS dt_vencimento,
+    TRUNC(a.dt_liquidacao)                                            AS dt_liquidacao,
+    
+    -- Formatação Condicional CPF ou CNPJ
       DECODE(
         a.cd_pessoa_fisica, NULL,
         REGEXP_REPLACE(LPAD(a.cd_cgc, 14), '([0-9]{2})([0-9]{3})([0-9]{3})([0-9]{4})', '\\1.\\2.\\3/\\4-'),
         REGEXP_REPLACE(LPAD(obter_dados_pf(a.cd_pessoa_fisica, 'CPF'), 11), '([0-9]{3})([0-9]{3})([0-9]{3})', '\\1.\\2.\\3-')
-      ) ds_cpf_cnpj,
-      SUBSTR(obter_nome_pf_pj(a.cd_pessoa_fisica, a.cd_cgc), 1, 255) nm_pessoa,
-      a.nr_seq_classe || DECODE(a.nr_seq_classe,NULL,NULL,' - ') || SUBSTR(obter_dados_titulo_receber(a.nr_titulo, 'DCL'), 1, 255) ds_classificao_titulo,
-      a.ie_tipo_titulo || DECODE(a.ie_tipo_titulo,NULL,NULL,' - ') || SUBSTR(obter_valor_dominio(712, a.ie_tipo_titulo), 1, 255) ds_tipo_titulo,
-      a.ie_origem_titulo || DECODE(a.ie_origem_titulo,NULL,NULL,' - ') || SUBSTR(obter_valor_dominio(709, a.ie_origem_titulo), 1, 255) ds_origem
-    FROM titulo_receber a
+      )                                                               AS ds_cpf_cnpj,
+    
+    SUBSTR(obter_nome_pf_pj(a.cd_pessoa_fisica, a.cd_cgc), 1, 255)     AS nm_pessoa,
+    
+    -- Concatenação Classificação
+    a.nr_seq_classe
+    || DECODE(a.nr_seq_classe, NULL, NULL, ' - ')
+    || SUBSTR(obter_dados_titulo_receber(a.nr_titulo, 'DCL'), 1, 255)  AS ds_classificao_titulo,
+    
+    -- Concatenação Tipo Título
+    a.ie_tipo_titulo
+    || DECODE(a.ie_tipo_titulo, NULL, NULL, ' - ')
+    || SUBSTR(obter_valor_dominio(712, a.ie_tipo_titulo), 1, 255)      AS ds_tipo_titulo,
+    
+    -- Concatenação Origem
+    a.ie_origem_titulo
+    || DECODE(a.ie_origem_titulo, NULL, NULL, ' - ')
+    || SUBSTR(obter_valor_dominio(709, a.ie_origem_titulo), 1, 255)    AS ds_origem,
+    
+    fti_obter_contrato_por_titulo(a.nr_titulo)                         AS nr_contrato,
+    pls_obter_dados_contrato(b.nr_sequencia, 'TC')                     AS ie_tipo_contratacao
+
+FROM
+    titulo_receber a
+    LEFT JOIN pls_contrato b ON b.nr_contrato = fti_obter_contrato_por_titulo(a.nr_titulo)
     WHERE 1 = 1
     """
     params = {}
@@ -71,9 +92,29 @@ def buscar_titulos(filtros):
     if filtros.get('status'):
         sql += " AND SUBSTR(obter_valor_dominio(710, a.ie_situacao), 1, 254) = :status"
         params['status'] = filtros['status']
-    
+
+    if filtros.get('origem'):
+        sql += " AND a.ie_origem_titulo = :origem"
+        params['origem'] = filtros['origem']
+
+    if filtros.get('tipo_contratacao'):
+        sql += " AND pls_obter_dados_contrato(b.nr_sequencia, 'TC') = :tipo_contratacao"
+        params['tipo_contratacao'] = filtros['tipo_contratacao']
+
+    if filtros.get('tipo_pessoa'):
+        sql += """ AND (CASE 
+                        WHEN a.cd_cgc IS NULL AND a.cd_pessoa_fisica IS NOT NULL THEN 'Pessoa física' 
+                        WHEN a.cd_pessoa_fisica IS NULL AND a.cd_cgc IS NOT NULL THEN 'Pessoa jurídica'
+                    END) = :tipo_pessoa """
+        params['tipo_pessoa'] = filtros['tipo_pessoa']
+
     if filtros.get('pessoa'):
-        sql += " AND UPPER(obter_nome_pf_pj(a.cd_pessoa_fisica, a.cd_cgc)) LIKE UPPER(:pessoa)"
+        sql += """ AND (
+                UPPER(obter_nome_pf_pj(a.cd_pessoa_fisica, a.cd_cgc)) LIKE UPPER(:pessoa)
+                OR obter_dados_pf(a.cd_pessoa_fisica, 'CPF') LIKE :pessoa
+                OR a.cd_cgc LIKE :pessoa
+            )"""
+        valor_limpo = filtros['pessoa'].replace('.', '').replace('-', '').replace('/', '')
         params['pessoa'] = f"%{filtros['pessoa']}%"
 
     if filtros.get('dt_inicio') and filtros.get('dt_fim'):

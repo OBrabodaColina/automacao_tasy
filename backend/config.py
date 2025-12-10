@@ -29,3 +29,17 @@ class Config:
     # Usuário Admin da Ferramenta (quem pode logar)
     APP_USER = os.getenv('APP_USER', 'admin')
     APP_PASS = os.getenv('APP_PASS', 'senha123')
+
+    # Configurações de Email
+    SMTP_SERVER = os.getenv('SMTP_SERVER')
+    SMTP_PORT = os.getenv('SMTP_PORT')
+    SMTP_USER = os.getenv('SMTP_USER')
+    SMTP_PASS = os.getenv('SMTP_PASS')
+    EMAIL_FROM = os.getenv('EMAIL_FROM')
+    EMAIL_TO = os.getenv('EMAIL_TO')
+    SMTP_TLS = os.getenv("SMTP_TLS", "true").lower() in {"true", "1", "yes"}
+
+    # Configuração do SQLite
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'db/tasy_automacao.db')
+    SQLALCHEMY_TRACK_MODIFICATIONS = False

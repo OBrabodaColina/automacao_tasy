@@ -5,38 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="01b8964c-09cf-4cfd-bc9b-d237079dfba4" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/backend/api/users.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/services/email_service.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/.env" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/postcss.config.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/components/Sidebar.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/hooks/useTheme.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/Configuracoes.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/src/pages/Relatorios.jsx" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/tailwind.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/api/auth.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/api/auth.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/api/automacao.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/api/automacao.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/api/titulos.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/api/titulos.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/db/connection.py" beforeDir="false" afterPath="$PROJECT_DIR$/backend/db/connection.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/selenium/tasy_automacao.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/selenium/tasy_login.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/eslint.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/eslint.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/App.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/components/TabelaTitulos.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/components/TabelaTitulos.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/main.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/main.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/AutomacaoStatus.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/AutomacaoStatus.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/Login.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/Login.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/vite.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/vite.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

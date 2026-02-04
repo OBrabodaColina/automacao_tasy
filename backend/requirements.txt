@@ -1,0 +1,29 @@
+#Framework Web e API
+
+Flask
+flask_restful
+Flask-Cors
+
+#Servidor de Produção
+
+gunicorn
+
+#Banco de Dados (Oracle)
+
+oracledb
+flask_sqlalchemy
+
+#Automação Web (Selenium)
+
+selenium
+webdriver-manager
+
+#Utilitários
+
+python-dotenv
+requests
+
+#Segurança (Adicionado pois você usa no código)
+
+flask-jwt-extended
+PyJWT

@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: tasy_automacao_backend
+    restart: unless-stopped
+    shm_size: '2gb'
+    env_file: .env
+    environment:
+      - ORACLE_CLIENT_LIB_DIR=/opt/oracle/instantclient_21_12
+      - HEADLESS_MODE=True
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    volumes:
+      - ./logs:/app/logs
+
+  frontend:
+    build: ./frontend
+    container_name: tasy_automacao_frontend
+    restart: unless-stopped
+    ports:
+      - "5099:80"
+    depends_on:
+      - backend
